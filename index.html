@@ -16,9 +16,12 @@
 <link rel="preload" as="image" href="media/rondgang/d/1_00.webp" media="(min-aspect-ratio: 7/10)">
 <link rel="preload" as="image" href="media/rondgang/m/1_00.webp" media="(max-aspect-ratio: 699/1000)">
 <title>Walkthrough Studio</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@300..700&display=swap">
+<link rel="preload" href="media/fonts/host-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face{font-family:"Host Grotesk";font-style:normal;font-weight:300 700;font-display:swap;src:url(media/fonts/host-grotesk-latin-ext.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Host Grotesk";font-style:normal;font-weight:300 700;font-display:swap;src:url(media/fonts/host-grotesk-latin.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+</style>
+<script src="media/js/lenis.min.js" defer></script>
 <script>document.documentElement.classList.add('js')</script>
 <style>
 /* Layout: one continuous walk through a home. The film fills the window; room names sit on the image in a thin,
@@ -58,18 +61,26 @@ section[id]{scroll-margin-top:var(--head)}
 .textlink:hover{opacity:.7}
 
 /* Header */
-.site-head{position:fixed;top:0;left:0;right:0;z-index:30;padding-top:env(safe-area-inset-top,0px);color:var(--on-image);transition:background-color .4s ease,color .4s ease,border-color .4s ease;border-bottom:1px solid transparent}
+.site-head{position:fixed;top:0;left:0;right:0;z-index:30;padding-top:env(safe-area-inset-top,0px);color:var(--on-image);transition:background-color .4s ease,color .4s ease,border-color .4s ease,transform .55s cubic-bezier(.2,.7,.2,1);border-bottom:1px solid transparent}
 .site-head.is-solid{background:var(--paper);background:color-mix(in srgb,var(--paper) 92%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);color:var(--ink);border-bottom-color:var(--line)}
 .head-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:1rem;height:var(--head)}
 .brand{justify-self:start;text-decoration:none}
 .site-nav{display:flex;gap:clamp(1.25rem,3vw,2.75rem)}
-.site-nav a{text-decoration:none;opacity:.85}
+.site-nav a{position:relative;text-decoration:none;opacity:.85;transition:opacity .3s ease}
 .site-nav a:hover{opacity:1}
-.head-note{justify-self:end;text-align:right;opacity:.85}
-.head-contact{display:none;justify-self:end;text-decoration:none}
+.site-nav a::after,.contact-value::after{content:"";position:absolute;left:0;right:0;bottom:-.45em;height:1px;background:currentColor;transform:scaleX(0);transform-origin:right;transition:transform .5s cubic-bezier(.2,.7,.2,1)}
+.site-nav a:hover::after,.contact-value:hover::after,.contact-value:focus-visible::after{transform:scaleX(1);transform-origin:left}
+.site-head.is-hidden{transform:translateY(-101%)}
+.head-end{justify-self:end;display:flex;align-items:center;gap:1.5rem}
+.lang{display:flex;align-items:center;gap:.35rem}
+.lang span{opacity:.4}
+.lang button{background:none;border:0;padding:.65rem .2rem;cursor:pointer;font:inherit;letter-spacing:inherit;text-transform:inherit;color:inherit;opacity:.55;transition:opacity .2s ease}
+.lang button:hover{opacity:.85}
+.lang button[aria-pressed="true"]{opacity:1;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.5em}
+.head-contact{display:none;text-decoration:none}
 @media (max-width:760px){
   .head-row{grid-template-columns:1fr auto}
-  .site-nav,.head-note{display:none}
+  .site-nav{display:none}
   .head-contact{display:block}
 }
 
@@ -78,7 +89,7 @@ section[id]{scroll-margin-top:var(--head)}
 .js .tour{height:calc(var(--units,7.6) * var(--step) + 100vh)}
 @supports (height:100svh){.js .tour{height:calc(var(--units,7.6) * var(--step) + 100svh)}}
 .tour-stage{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden}
-.tour-poster,.tour-poster img,.tour-canvas,.tour-shade{position:absolute;inset:0;width:100%;height:100%}
+.tour-media,.tour-poster,.tour-poster img,.tour-canvas,.tour-shade{position:absolute;inset:0;width:100%;height:100%}
 .tour-poster img{object-fit:cover}
 .tour-shade{pointer-events:none;background:
   linear-gradient(to bottom,rgb(var(--shade-rgb) / .5) 0,rgb(var(--shade-rgb) / 0) 160px),
@@ -132,6 +143,11 @@ section[id]{scroll-margin-top:var(--head)}
 /* Video with own play control */
 .player{position:relative;min-width:0;background:var(--night)}
 .frame{width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;background:var(--night)}
+.films{display:grid;gap:3rem}
+.film-port{width:min(100%,21rem);justify-self:center}
+.film-port .frame{aspect-ratio:9/16}
+/* Side by side at equal height: 9:16 next to 16:9 needs (9/16)^2 of the width. */
+@media (min-width:900px){.films{grid-template-columns:minmax(0,1fr) minmax(0,.3164fr);gap:clamp(1.5rem,2.5vw,2.5rem);align-items:start}.film-port{width:auto;justify-self:stretch}}
 .play{position:absolute;inset:0;display:grid;place-items:center;padding:0;border:0;color:var(--on-image);cursor:pointer;
   background:radial-gradient(closest-side,rgb(var(--shade-rgb) / .38),rgb(var(--shade-rgb) / 0) 85%) center / min(28rem,90%) 9rem no-repeat}
 .play[hidden]{display:none}
@@ -184,8 +200,7 @@ section[id]{scroll-margin-top:var(--head)}
 .contact-list{margin-top:1rem;border-top:1px solid var(--night-line);max-width:44rem}
 .contact-row{display:grid;grid-template-columns:6.5rem minmax(0,1fr) auto;align-items:baseline;gap:.4rem 1rem;padding-block:1.15rem;border-bottom:1px solid var(--night-line)}
 .contact-row dt{color:var(--night-muted)}
-.contact-value{font-size:clamp(1.25rem,1rem + 1vw,1.75rem);font-weight:300;text-decoration:none;overflow-wrap:anywhere}
-.contact-value:hover{opacity:.75}
+.contact-value{position:relative;font-size:clamp(1.0625rem,.55rem + 2.6vw,1.75rem);font-weight:300;text-decoration:none}
 .copy{background:none;border:0;padding:.4rem 0;cursor:pointer;color:var(--night-muted)}
 .copy:hover{color:var(--on-image)}
 @media (max-width:520px){.contact-row{grid-template-columns:minmax(0,1fr) auto}.contact-row dt{grid-column:1/-1}}
@@ -193,11 +208,37 @@ section[id]{scroll-margin-top:var(--head)}
 @media (min-width:900px){.contact-photo{display:block;width:100%;height:auto;aspect-ratio:4/5;object-fit:cover}}
 .foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:.75rem 2rem;margin-top:clamp(5rem,10vw,8rem);padding-block:2rem;border-top:1px solid var(--night-line);color:var(--night-muted)}
 
+/* Opening: the picture settles from a slow zoom while the title rises in. */
+@keyframes settle{from{transform:scale(1.08)}}
+@keyframes rise{from{opacity:0;transform:translateY(26px)}}
+.js .tour-media{animation:settle 2.6s cubic-bezier(.16,.8,.2,1) both}
+.js .cap-hero > *{animation:rise 1.3s cubic-bezier(.2,.7,.2,1) both}
+.js .cap-hero > :nth-child(1){animation-delay:.25s}
+.js .cap-hero > :nth-child(2){animation-delay:.4s}
+.js .cap-hero > :nth-child(3){animation-delay:.65s}
+.js .cap-hero > :nth-child(4){animation-delay:.9s}
+@keyframes fade{from{opacity:0}}
+.js .site-head .head-row{animation:fade 1.4s ease .6s both}
+
+/* Reveal on scroll: text rises in, pictures open up. Classes are added by the script, so without it everything just shows. */
+.rv{opacity:0;transform:translateY(32px);transition:opacity 1s cubic-bezier(.2,.7,.2,1),transform 1.2s cubic-bezier(.2,.7,.2,1)}
+.rv-img{clip-path:inset(9% 5% 9% 5%);transform:scale(1.04);transition:clip-path 1.5s cubic-bezier(.2,.7,.2,1),transform 1.8s cubic-bezier(.2,.7,.2,1)}
+.rv.in{opacity:1;transform:none}
+.rv-img.in{clip-path:inset(0);transform:none}
+
+/* Lenis (smooth wheel scrolling) */
+html.lenis,html.lenis body{height:auto}
+.lenis.lenis-smooth{scroll-behavior:auto !important}
+.lenis:not(.lenis-autoToggle).lenis-stopped{overflow:clip}
+.lenis.lenis-smooth iframe{pointer-events:none}
+
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   .cap,.cap.is-on{transition:none}
   .cap-end,.cap-end.is-on{transform:translate(-50%,-50%)}
   .enter i::after{animation:none;top:30%}
+  .js .tour-media,.js .cap-hero > *,.js .site-head .head-row{animation:none}
+  .rv,.rv-img{opacity:1;transform:none;clip-path:none;transition:none}
 }
 </style>
 </head>
@@ -205,66 +246,74 @@ section[id]{scroll-margin-top:var(--head)}
 <header class="site-head" id="kop">
   <div class="wrap head-row">
     <a class="brand label" href="#rondgang">Walkthrough Studio</a>
-    <nav class="site-nav label" aria-label="Main">
-      <a href="#film">Film</a>
-      <a href="#process">Process</a>
-      <a href="#pricing">Pricing</a>
-      <a href="#contact">Contact</a>
+    <nav class="site-nav label" aria-label="Main" data-i18n-attr="aria-label:nav">
+      <a href="#film" data-i18n="nav.film">Film</a>
+      <a href="#process" data-i18n="nav.process">Process</a>
+      <a href="#pricing" data-i18n="nav.pricing">Pricing</a>
+      <a href="#contact" data-i18n="nav.contact">Contact</a>
     </nav>
-    <p class="head-note label">Interior films</p>
-    <a class="head-contact label" href="#contact">Contact</a>
+    <div class="head-end">
+      <div class="lang label" role="group" aria-label="Language" data-i18n-attr="aria-label:lang">
+        <button type="button" data-lang="en" aria-pressed="true" lang="en" title="English">EN</button>
+        <span aria-hidden="true">/</span>
+        <button type="button" data-lang="nl" aria-pressed="false" lang="nl" title="Nederlands">NL</button>
+      </div>
+      <a class="head-contact label" href="#contact" data-i18n="nav.contact">Contact</a>
+    </div>
   </div>
 </header>
 
 <main>
-  <section class="tour" id="rondgang" aria-label="A walk through a home">
+  <section class="tour" id="rondgang" aria-label="A walk through a home" data-i18n-attr="aria-label:tour">
     <div class="tour-stage">
+      <div class="tour-media">
       <picture class="tour-poster">
         <source media="(min-aspect-ratio: 7/10)" srcset="media/rondgang/d/1_00.webp">
-        <img src="media/rondgang/m/1_00.webp" alt="Hallway of an apartment, looking through an open doorway into a bright living room" fetchpriority="high">
+        <img src="media/rondgang/m/1_00.webp" alt="Hallway of an apartment, looking through an open doorway into a bright living room" data-i18n-attr="alt:poster" fetchpriority="high">
       </picture>
       <canvas class="tour-canvas" aria-hidden="true"></canvas>
+      </div>
       <div class="tour-shade" aria-hidden="true"></div>
 
       <div class="captions">
         <div class="cap cap-hero is-on">
-          <p class="label">Interior films, made from photos</p>
+          <p class="label" data-i18n="hero.label">Interior films, made from photos</p>
           <h1 class="display">Walkthrough<br>Studio</h1>
-          <p class="note">A home, room by room. Made from the photos you already have.</p>
-          <div class="enter label" aria-hidden="true"><i></i>Scroll to enter</div>
+          <p class="note" data-i18n="hero.note">A home, room by room. Made from the photos you already have.</p>
+          <div class="enter label" aria-hidden="true"><i></i><span data-i18n="hero.enter">Scroll to enter</span></div>
         </div>
         <div class="cap pos-br">
-          <p class="label">01 / Hallway</p>
-          <h2 class="display room">The<br>hallway</h2>
-          <p class="note">No photographer. No visit. Just the photos you have.</p>
+          <p class="label" data-i18n="r1.label">01 / Hallway</p>
+          <h2 class="display room" data-i18n="r1.room">The<br>hallway</h2>
+          <p class="note" data-i18n="r1.note">No photographer. No visit. Just the photos you have.</p>
         </div>
         <div class="cap pos-bl">
-          <p class="label">02 / Living</p>
-          <h2 class="display room">The living<br>room</h2>
-          <p class="note">Every room rebuilt to scale, each piece where it stands.</p>
+          <p class="label" data-i18n="r2.label">02 / Living</p>
+          <h2 class="display room" data-i18n="r2.room">The living<br>room</h2>
+          <p class="note" data-i18n="r2.note">Every room rebuilt to scale, each piece where it stands.</p>
         </div>
         <div class="cap pos-br">
-          <p class="label">03 / Kitchen</p>
-          <h2 class="display room">The<br>kitchen</h2>
-          <p class="note">Styled to sell. Materials taken from your own photos.</p>
+          <p class="label" data-i18n="r3.label">03 / Kitchen</p>
+          <h2 class="display room" data-i18n="r3.room">The<br>kitchen</h2>
+          <p class="note" data-i18n="r3.note">Styled to sell. Materials taken from your own photos.</p>
         </div>
         <div class="cap pos-br">
-          <p class="label">04 / Bedroom</p>
-          <h2 class="display room">The<br>bedroom</h2>
-          <p class="note">One slow, steady move per room. Landscape and portrait.</p>
+          <p class="label" data-i18n="r4.label">04 / Bedroom</p>
+          <h2 class="display room" data-i18n="r4.room">The<br>bedroom</h2>
+          <p class="note" data-i18n="r4.note">One slow, steady move per room. Landscape and portrait.</p>
         </div>
         <div class="cap cap-end">
-          <p class="label">05 / Bathroom</p>
-          <h2 class="display room">The<br>bathroom</h2>
-          <p class="note">Ready in 48 hours. From €149.</p>
-          <a class="textlink" href="#process">See how it works</a>
+          <p class="label" data-i18n="r5.label">05 / Bathroom</p>
+          <h2 class="display room" data-i18n="r5.room">The<br>bathroom</h2>
+          <p class="note" data-i18n="r5.note">Ready in 48 hours. From €149.</p>
+          <a class="textlink" href="#process" data-i18n="r5.link">See how it works</a>
         </div>
       </div>
 
       <div class="tour-foot" aria-hidden="true">
         <div class="wrap label">
           <span class="tour-count"><b id="tour-idx">01</b> / 05</span>
-          <span class="tour-hint">Sample apartment, 70 m²</span>
+          <span class="tour-hint" data-i18n="hint">Sample apartment, 70 m²</span>
         </div>
         <div class="tour-line"><i></i></div>
       </div>
@@ -275,20 +324,31 @@ section[id]{scroll-margin-top:var(--head)}
     <div class="wrap">
       <div class="sec-head">
         <div>
-          <p class="label">The film</p>
-          <h2 class="display">One apartment,<br>20 seconds</h2>
+          <p class="label" data-i18n="film.label">The film</p>
+          <h2 class="display" data-i18n="film.title">One apartment,<br>20 seconds</h2>
         </div>
-        <p class="sec-text">This is the film you just walked through, the way it is delivered: one file for your website, your listing or your socials.</p>
+        <p class="sec-text" data-i18n="film.text">This is the film you just walked through, the way it is delivered: landscape for your website and listing, portrait for your socials.</p>
       </div>
-      <figure>
-        <div class="player">
-          <video class="frame" controls playsinline preload="none" poster="media/showcase.jpg" width="1600" height="900">
-            <source src="media/showcase.mp4" type="video/mp4">
-          </video>
-          <button class="play" type="button" aria-label="Play the film of the sample apartment" hidden><span class="play-in"><span class="play-ring"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 1.5v13L14 8z" fill="currentColor"/></svg></span><span class="label">Play film · 0:20</span></span></button>
-        </div>
-        <figcaption class="caption label"><span>Sample apartment, 70 m²</span><span>5 rooms · 16:9 · 24 fps</span></figcaption>
-      </figure>
+      <div class="films">
+        <figure class="film">
+          <div class="player">
+            <video class="frame" controls playsinline preload="none" data-poster="media/showcase_poster.webp" width="1600" height="900">
+              <source src="media/showcase.mp4" type="video/mp4">
+            </video>
+            <button class="play" type="button" aria-label="Play the landscape film of the sample apartment" data-i18n-attr="aria-label:film.play" hidden><span class="play-in"><span class="play-ring"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 1.5v13L14 8z" fill="currentColor"/></svg></span><span class="label" data-i18n="film.playLabel">Play film · 0:20</span></span></button>
+          </div>
+          <figcaption class="caption label"><span data-i18n="film.cap1">Sample apartment, 70 m²</span><span data-i18n="film.cap2">Landscape · 16:9 · 24 fps</span></figcaption>
+        </figure>
+        <figure class="film film-port">
+          <div class="player">
+            <video class="frame" controls playsinline preload="none" data-poster="media/showcase_9x16.webp" width="720" height="1280">
+              <source src="media/showcase_9x16.mp4" type="video/mp4">
+            </video>
+            <button class="play" type="button" aria-label="Play the portrait film of the sample apartment" data-i18n-attr="aria-label:film.playPort" hidden><span class="play-in"><span class="play-ring"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 1.5v13L14 8z" fill="currentColor"/></svg></span></span></button>
+          </div>
+          <figcaption class="caption label"><span data-i18n="film.cap3">Portrait · 9:16</span><span>0:20</span></figcaption>
+        </figure>
+      </div>
     </div>
   </section>
 
@@ -296,38 +356,38 @@ section[id]{scroll-margin-top:var(--head)}
     <div class="wrap">
       <div class="sec-head">
         <div>
-          <p class="label">Process</p>
-          <h2 class="display">From photo<br>to film</h2>
+          <p class="label" data-i18n="proc.label">Process</p>
+          <h2 class="display" data-i18n="proc.title">From photo<br>to film</h2>
         </div>
-        <p class="sec-text">An apartment in Montreuil, Paris, made from the 13 photos in its listing. The same steps for every home, ending in one slow camera move per frame.</p>
+        <p class="sec-text" data-i18n="proc.text">An apartment in Montreuil, Paris, made from the 13 photos in its listing. The same steps for every home, ending in one slow camera move per frame.</p>
       </div>
       <div class="steps">
         <figure class="step">
-          <img class="step-img" src="media/stap1_foto.jpg" width="1200" height="900" loading="lazy" decoding="async" alt="Listing photo of the living room: orange sofa, sliding door to a balcony with a view over the city">
+          <img class="step-img" src="media/proces_foto.webp" width="1200" height="900" loading="lazy" decoding="async" alt="Listing photo of the living room: TV wall, radiator and a sliding door to a balcony with a view over the city" data-i18n-attr="alt:s1.alt">
           <figcaption class="step-copy">
-            <p class="label">01 / Photo</p>
-            <p>An ordinary listing photo. For a project I ask for two per room, taken from opposite corners.</p>
+            <p class="label" data-i18n="s1.label">01 / Photo</p>
+            <p data-i18n="s1.text">An ordinary listing photo. For a project I ask for two per room, taken from opposite corners.</p>
           </figcaption>
         </figure>
         <div class="step">
           <div class="compare" id="vergelijk">
-            <img src="media/stap3_beeld.jpg" width="1200" height="670" loading="lazy" decoding="async" alt="Photorealistic final frame of the same living room">
-            <div class="compare-top"><img src="media/stap2_model.jpg" width="1200" height="676" loading="lazy" decoding="async" alt="Plain 3D model of the living room with furniture as simple blocks"></div>
+            <img src="media/proces_beeld.webp" width="1600" height="900" loading="lazy" decoding="async" alt="Photorealistic final frame of the same living room" data-i18n-attr="alt:s3.alt">
+            <div class="compare-top"><img src="media/proces_model.webp" width="1600" height="900" loading="lazy" decoding="async" alt="Plain 3D model of the living room with furniture as simple blocks" data-i18n-attr="alt:s2.alt"></div>
             <span class="compare-line" aria-hidden="true"></span>
             <span class="compare-knob" aria-hidden="true"></span>
-            <span class="compare-tag tag-l label" aria-hidden="true">3D model</span>
-            <span class="compare-tag tag-r label" aria-hidden="true">Final frame</span>
-            <label class="visually-hidden" for="vergelijk-schuif">Slide between 3D model and final frame</label>
+            <span class="compare-tag tag-l label" aria-hidden="true" data-i18n="cmp.l">3D model</span>
+            <span class="compare-tag tag-r label" aria-hidden="true" data-i18n="cmp.r">Final frame</span>
+            <label class="visually-hidden" for="vergelijk-schuif" data-i18n="cmp.slider">Slide between 3D model and final frame</label>
             <input class="visually-hidden" type="range" id="vergelijk-schuif" min="0" max="100" value="50">
           </div>
           <div class="step-pair">
             <div class="step-copy">
-              <p class="label">02 / Model</p>
-              <p>I rebuild the room to scale, every piece in its place, and set the cameras at eye level.</p>
+              <p class="label" data-i18n="s2.label">02 / Model</p>
+              <p data-i18n="s2.text">I rebuild the room to scale, every piece in its place, and set the cameras at eye level.</p>
             </div>
             <div class="step-copy">
-              <p class="label">03 / Frame</p>
-              <p>AI turns the model into a photoreal frame, with the materials and furniture from the photos.</p>
+              <p class="label" data-i18n="s3.label">03 / Frame</p>
+              <p data-i18n="s3.text">AI turns the model into a photoreal frame, with the materials and furniture from the photos.</p>
             </div>
           </div>
         </div>
@@ -338,31 +398,31 @@ section[id]{scroll-margin-top:var(--head)}
   <section class="sec" id="pricing">
     <div class="wrap price-grid">
       <div class="price-main">
-        <p class="label">Pricing</p>
+        <p class="label" data-i18n="price.label">Pricing</p>
         <p class="display amount">€149</p>
-        <p class="price-note">Per home, for the first five clients. €249 after that. You see the film first, with a watermark, and only pay once you approve it. Paid by invoice.</p>
+        <p class="price-note" data-i18n="price.note">Per home, for the first five clients. €249 after that. You see the film first, with a watermark, and only pay once you approve it. Paid by invoice.</p>
       </div>
       <div class="facts">
         <div class="fact">
-          <h3 class="label">Included</h3>
+          <h3 class="label" data-i18n="inc.title">Included</h3>
           <ul>
-            <li>The film in landscape (16:9) and portrait (9:16)</li>
-            <li>Ready within 48 hours</li>
-            <li>One round of revisions</li>
+            <li data-i18n="inc.1">The film in landscape (16:9) and portrait (9:16)</li>
+            <li data-i18n="inc.2">Ready within 48 hours</li>
+            <li data-i18n="inc.3">One round of revisions</li>
           </ul>
         </div>
         <div class="fact">
-          <h3 class="label">What I need from you</h3>
+          <h3 class="label" data-i18n="need.title">What I need from you</h3>
           <ul>
-            <li>Two photos per room, from opposite corners</li>
-            <li>The ceiling height</li>
-            <li>Two wall lengths per room, or a floor plan</li>
+            <li data-i18n="need.1">Two photos per room, from opposite corners</li>
+            <li data-i18n="need.2">The ceiling height</li>
+            <li data-i18n="need.3">Two wall lengths per room, or a floor plan</li>
           </ul>
-          <p>No measurements at hand? I estimate them from the photos and tell you up front.</p>
+          <p data-i18n="need.note">No measurements at hand? I estimate them from the photos and tell you up front.</p>
         </div>
         <div class="fact">
-          <h3 class="label">Also possible</h3>
-          <p>A home shown in a new situation: refurnished, restyled or after a renovation. Price on request.</p>
+          <h3 class="label" data-i18n="also.title">Also possible</h3>
+          <p data-i18n="also.text">A home shown in a new situation: refurnished, restyled or after a renovation. Price on request.</p>
         </div>
       </div>
     </div>
@@ -372,22 +432,22 @@ section[id]{scroll-margin-top:var(--head)}
     <div class="wrap contact-grid">
       <div class="contact-text">
         <p class="label">Contact</p>
-        <h2 class="display">Let's walk<br>through your<br>home</h2>
-        <p class="contact-lead">Send me a link to your listing or a few photos, and I'll make one as an example.</p>
+        <h2 class="display" data-i18n="contact.title">Let's walk<br>through your<br>home</h2>
+        <p class="contact-lead" data-i18n="contact.lead">Send me a link to your listing or a few photos, and I'll make one as an example.</p>
         <dl class="contact-list">
           <div class="contact-row">
-            <dt class="label">Email</dt>
-            <dd><a class="contact-value" href="mailto:walkthroughstudio@outlook.com">walkthroughstudio@outlook.com</a></dd>
-            <dd><button type="button" class="copy label" data-copy="walkthroughstudio@outlook.com">Copy</button></dd>
+            <dt class="label" data-i18n="contact.email">Email</dt>
+            <dd><a class="contact-value" href="mailto:walkthroughstudio@outlook.com">walkthroughstudio<wbr>@outlook.com</a></dd>
+            <dd><button type="button" class="copy label" data-copy="walkthroughstudio@outlook.com" data-i18n="copy">Copy</button></dd>
           </div>
         </dl>
         <p class="label" style="color:var(--night-muted)">Bram, Walkthrough Studio</p>
       </div>
-      <img class="contact-photo" src="media/contact.jpg" width="860" height="1076" loading="lazy" decoding="async" alt="Hallway of the sample apartment, looking through the doorway into the living room">
+      <img class="contact-photo" src="media/contact.webp" width="860" height="1076" loading="lazy" decoding="async" alt="Hallway of the sample apartment, looking through the doorway into the living room" data-i18n-attr="alt:contact.alt">
     </div>
     <footer class="wrap foot label">
       <span>© 2026 Walkthrough Studio</span>
-      <span>Interior films, made from photos</span>
+      <span data-i18n="foot">Interior films, made from photos</span>
     </footer>
   </section>
 </main>
@@ -398,6 +458,71 @@ section[id]{scroll-margin-top:var(--head)}
   const ease = t => t * t * (3 - 2 * t);
   const band = (t, a, b) => ease(clamp((t - a) / (b - a), 0, 1));
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+
+  /* ---------- Language: English is in the HTML, Dutch comes from this table ---------- */
+  const NL = {
+    "nav": "Hoofdmenu", "lang": "Taal",
+    "nav.film": "Film", "nav.process": "Werkwijze", "nav.pricing": "Prijs", "nav.contact": "Contact",
+    "tour": "Een wandeling door een woning",
+    "poster": "Hal van een appartement, met door de open deur zicht op een lichte woonkamer",
+    "hero.label": "Interieurfilms, gemaakt van foto's",
+    "hero.note": "Een woning, kamer voor kamer. Gemaakt van de foto's die je al hebt.",
+    "hero.enter": "Scroll naar binnen",
+    "r1.label": "01 / Hal", "r1.room": "De<br>hal", "r1.note": "Geen fotograaf. Geen bezoek. Alleen de foto's die je al hebt.",
+    "r2.label": "02 / Woonkamer", "r2.room": "De<br>woonkamer", "r2.note": "Elke kamer op schaal nagebouwd, alles op zijn eigen plek.",
+    "r3.label": "03 / Keuken", "r3.room": "De<br>keuken", "r3.note": "Mooi aangekleed, met de materialen uit je eigen foto's.",
+    "r4.label": "04 / Slaapkamer", "r4.room": "De<br>slaapkamer", "r4.note": "Eén rustige, vloeiende beweging per kamer. Liggend en staand.",
+    "r5.label": "05 / Badkamer", "r5.room": "De<br>badkamer", "r5.note": "Binnen 48 uur klaar. Vanaf €149.", "r5.link": "Zo werkt het",
+    "hint": "Voorbeeldappartement, 70 m²",
+    "film.label": "De film", "film.title": "Eén appartement,<br>20 seconden",
+    "film.text": "Dit is de film waar je net doorheen liep, precies zoals je hem krijgt: liggend voor je website en advertentie, staand voor je socials.",
+    "film.play": "Speel de liggende film van het voorbeeldappartement af", "film.playLabel": "Bekijk de film · 0:20",
+    "film.playPort": "Speel de staande film van het voorbeeldappartement af",
+    "film.cap1": "Voorbeeldappartement, 70 m²", "film.cap2": "Liggend · 16:9 · 24 fps", "film.cap3": "Staand · 9:16",
+    "proc.label": "Werkwijze", "proc.title": "Van foto<br>tot film",
+    "proc.text": "Een appartement in Montreuil, Parijs, gemaakt van de 13 foto's uit de advertentie. Dezelfde stappen voor elke woning, met aan het eind één rustige camerabeweging per beeld.",
+    "s1.alt": "Advertentiefoto van de woonkamer: tv-wand, radiator en een schuifpui naar een balkon met uitzicht over de stad",
+    "s1.label": "01 / Foto", "s1.text": "Een gewone advertentiefoto. Voor een opdracht vraag ik er twee per kamer, vanuit tegenovergestelde hoeken.",
+    "s2.alt": "Eenvoudig 3D-model van de woonkamer, met de meubels als simpele blokken",
+    "s3.alt": "Fotorealistisch eindbeeld van dezelfde woonkamer",
+    "cmp.l": "3D-model", "cmp.r": "Eindbeeld", "cmp.slider": "Schuif tussen 3D-model en eindbeeld",
+    "s2.label": "02 / Model", "s2.text": "Ik bouw de kamer op schaal na, alles op zijn plek, en zet de camera's op ooghoogte.",
+    "s3.label": "03 / Beeld", "s3.text": "AI maakt van het model een fotorealistisch beeld, met de materialen en meubels uit de foto's.",
+    "price.label": "Prijs",
+    "price.note": "Per woning, voor de eerste vijf klanten. Daarna €249. Je ziet de film eerst, met watermerk, en betaalt pas als je hem goedkeurt. Betalen gaat per factuur.",
+    "inc.title": "Inbegrepen", "inc.1": "De film liggend (16:9) en staand (9:16)", "inc.2": "Binnen 48 uur klaar", "inc.3": "Eén correctieronde",
+    "need.title": "Wat ik van je nodig heb", "need.1": "Twee foto's per kamer, vanuit tegenovergestelde hoeken",
+    "need.2": "De plafondhoogte", "need.3": "Twee wandlengtes per kamer, of een plattegrond",
+    "need.note": "Geen maten bij de hand? Dan schat ik ze uit de foto's en laat ik je dat vooraf weten.",
+    "also.title": "Ook mogelijk",
+    "also.text": "Een woning in een nieuwe situatie laten zien: opnieuw ingericht, anders gestyled of na een verbouwing. Prijs op aanvraag.",
+    "contact.title": "Laten we door<br>jouw woning<br>lopen",
+    "contact.lead": "Stuur me een link naar je advertentie of een paar foto's, dan maak ik er een als voorbeeld.",
+    "contact.email": "E-mail", "copy": "Kopieer", "copied": "Gekopieerd",
+    "contact.alt": "Hal van het voorbeeldappartement, met door de deur zicht op de woonkamer",
+    "foot": "Interieurfilms, gemaakt van foto's"
+  };
+  const texts = [...document.querySelectorAll('[data-i18n]')].map(el => ({ el, key: el.dataset.i18n, en: el.innerHTML }));
+  const attrs = [...document.querySelectorAll('[data-i18n-attr]')].flatMap(el => el.dataset.i18nAttr.split(';').map(pair => {
+    const [name, key] = pair.split(':');
+    return { el, name, key, en: el.getAttribute(name) };
+  }));
+  let lang = 'en';
+  const t = (key, en) => (lang === 'nl' && NL[key]) || en;
+  function setLang(l, remember) {
+    lang = l === 'nl' ? 'nl' : 'en';
+    document.documentElement.lang = lang;
+    texts.forEach(x => { x.el.innerHTML = t(x.key, x.en); });
+    attrs.forEach(x => x.el.setAttribute(x.name, t(x.key, x.en)));
+    document.querySelectorAll('[data-lang]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
+    if (remember) try { localStorage.setItem('ws-lang', lang); } catch (_) {}
+  }
+  // ?lang=nl in the link wins, then an earlier choice on this device, then the browser's first language.
+  let start = new URLSearchParams(location.search).get('lang');
+  if (!start) try { start = localStorage.getItem('ws-lang'); } catch (_) {}
+  if (!start) start = /^nl\b/i.test((navigator.languages && navigator.languages[0]) || navigator.language || '') ? 'nl' : 'en';
+  setLang(start, false);
+  document.querySelectorAll('[data-lang]').forEach(b => b.addEventListener('click', () => setLang(b.dataset.lang, true)));
 
   /* ---------- The walk: scroll position = position in the house ---------- */
   // Last frame per room, 10 frames per second of film (a room is shorter when its clip was trimmed before a fault).
@@ -410,23 +535,43 @@ section[id]{scroll-margin-top:var(--head)}
   const head = document.getElementById('kop');
   const canvas = tour.querySelector('.tour-canvas');
   const ctx = canvas.getContext('2d');
-  // Small offscreen canvases for the motion blur: outgoing room (low) and incoming room (buf).
+  // Small offscreen canvases for the motion blur: outgoing room (low), incoming room (buf), and the two smoothed (soft).
   const low = document.createElement('canvas'), lctx = low.getContext('2d');
   const buf = document.createElement('canvas'), bctx = buf.getContext('2d');
+  const soft = document.createElement('canvas'), sctx = soft.getContext('2d');
+  const COPIES = 24; // offset copies per blurred picture
   const caps = [...tour.querySelectorAll('.cap')];
   const fill = tour.querySelector('.tour-line i');
   const idxEl = document.getElementById('tour-idx');
   tour.style.setProperty('--units', U);
 
-  let set = '', frames = [], order = [], oi = 0, active = 0, gen = 0;
-  let target = 0, cur = 0, raf = 0, inView = true, lastOn = 0, lastK = 0;
+  // Every frame is downloaded once as a compressed file, but only the frames around the camera are kept decoded.
+  // Drawing a decoded bitmap takes ~2 ms; drawing an <img> the browser has thrown out of its decode cache takes ~23 ms
+  // (measured on the live site, 2026-10-07), which is what made scrolling stutter.
+  const conn = navigator.connection || {};
+  const lite = !!(conn.saveData || /2g/.test(conn.effectiveType || '')); // data saver: every other frame only
+  const AHEAD = 8, BEHIND = 5; // decoded frames kept in front of and behind the camera
+  let set = '', frames = [], order = [], oi = 0, active = 0, decoding = 0, gen = 0, started = false, thumbW = 0, thumbs = true;
+  let target = 0, cur = 0, raf = 0, inView = true, lastOn = 0, lastK = 0, lastT = 0, lastSpot = -1, smooth = false;
+
+  const release = img => { if (img && img.close) img.close(); };
+  function decodeBlob(blob, w) {
+    if (!window.createImageBitmap) return new Promise((res, rej) => {
+      const img = new Image(); img.onload = () => res(img); img.onerror = rej; img.src = URL.createObjectURL(blob);
+    });
+    return createImageBitmap(blob, w ? { resizeWidth: w, resizeQuality: 'medium' } : undefined);
+  }
 
   function useSet(name) {
     if (name === set) return;
-    set = name; gen++; active = 0; oi = 0;
+    frames.forEach(row => row.forEach(f => { release(f.bmp); release(f.th); }));
+    set = name; gen++; active = 0; decoding = 0; oi = 0; lastSpot = -1;
+    thumbW = name === 'd' ? 384 : 160;
     frames = Array.from({ length: K }, (_, k) => Array.from({ length: N }, (_, i) => ({
-      src: `media/rondgang/${name}/${k + 1}_${String(i).padStart(2, '0')}.webp`, img: null, ok: false,
-      req: i > LAST[k] // these frames do not exist, so the loader never asks for them
+      k, i, src: `media/rondgang/${name}/${k + 1}_${String(i).padStart(2, '0')}.webp`,
+      blob: null, bmp: null, th: null, busy: false, tries: 0,
+      // Frames past the end of a room do not exist, so the loader never asks for them.
+      req: i > LAST[k] || (lite && i % 2 === 1 && i !== LAST[k])
     })));
     order = [];
     for (let i = 0; i < N; i++) order.push([0, i]);
@@ -444,39 +589,96 @@ section[id]{scroll-margin-top:var(--head)}
     return null;
   }
   function pump() {
+    if (!started || !frames.length) return; // no frame set chosen yet (the canvas has no size): size() will call again
     while (active < 6) {
       const job = nextJob();
       if (!job) return;
-      const f = frames[job[0]][job[1]], g = gen, img = new Image();
+      const f = frames[job[0]][job[1]], g = gen;
       f.req = true; active++;
-      img.decoding = 'async';
-      img.src = f.src;
-      const done = ok => {
+      fetch(f.src).then(r => { if (!r.ok) throw new Error(r.status); return r.blob(); }).then(blob => {
+        if (g !== gen) return;
+        active--; f.blob = blob; decode(); pump();
+      }, () => {
         if (g !== gen) return;
         active--;
-        if (ok) { f.img = img; f.ok = true; kick(); }
-        else if ((f.tries = (f.tries || 0) + 1) < 3) { // flaky network: try again a second later
-          setTimeout(() => { if (g === gen) { f.req = false; order.push(job); pump(); } }, 1000);
-        }
+        if (++f.tries < 3) setTimeout(() => { if (g === gen) { f.req = false; order.push(job); pump(); } }, 1000); // flaky network
         pump();
-      };
-      (img.decode ? img.decode() : new Promise((res, rej) => { img.onload = res; img.onerror = rej; }))
-        .then(() => done(true), () => done(false));
+      });
     }
   }
-  function frameImg(k, i) {
-    const row = frames[k];
-    for (let d = 0; d < N; d++) {
-      if (i - d >= 0 && row[i - d].ok) return row[i - d].img;
-      if (i + d < N && row[i + d].ok) return row[i + d].img;
+
+  // The frames worth having decoded at scroll position s: around the camera, the start of the next room, the end of the last.
+  function around(s, extra) {
+    const k = Math.min(K - 1, Math.floor(s)), u = s - k, list = [];
+    const add = (kk, i) => { if (kk >= 0 && kk < K && i >= 0 && i <= LAST[kk]) list.push(frames[kk][i]); };
+    if (reduce.matches) {
+      for (const kk of [k, k + 1, k - 1]) if (kk >= 0 && kk < K) add(kk, Math.round(LAST[kk] / 2));
+      return list;
     }
-    return null;
+    const p = Math.round(u * LAST[k]);
+    for (let d = 0; d <= AHEAD + extra; d++) { add(k, p + d); if (d && d <= BEHIND + extra) add(k, p - d); }
+    if (u > 0.5) for (let i = 0; i <= 6 + extra; i++) add(k + 1, i);
+    if (u < 0.3 && k > 0) for (let i = 0; i <= 4 + extra; i++) add(k - 1, LAST[k - 1] - i);
+    return list;
+  }
+  function decode() {
+    if (!frames.length) return;
+    const s = clamp(cur, 0, K - 1e-4), keep = new Set(around(s, 3));
+    for (const row of frames) for (const f of row) if (f.bmp && !keep.has(f)) { release(f.bmp); f.bmp = null; }
+    for (const f of around(s, 0)) {
+      if (decoding >= 3) return;
+      if (f.blob && !f.bmp && !f.busy) begin(f, false);
+    }
+    // Small copies of every other frame: a stand-in when you scroll faster than frames decode, and the source for the motion blur.
+    if (!thumbs) return;
+    for (const row of frames) for (const f of row) {
+      if (decoding >= 2) return;
+      if (f.blob && !f.th && !f.busy && (f.i % 2 === 0 || f.i === LAST[f.k])) begin(f, true);
+    }
+  }
+  function begin(f, small) {
+    const g = gen;
+    f.busy = true; decoding++;
+    decodeBlob(f.blob, small ? thumbW : 0).then(img => {
+      if (g !== gen) { release(img); return; }
+      decoding--; f.busy = false;
+      if (!small) f.bmp = img;
+      else if (img.width === thumbW) f.th = img;
+      else { thumbs = false; release(img); } // no resizing in this browser: the blur uses the full frames
+      kick(); decode();
+    }, () => {
+      if (g !== gen) return;
+      decoding--; f.busy = false;
+      if (small) thumbs = false;
+    });
+  }
+  // Best picture for frame i of room k: the frame itself, else a decoded neighbour, else a small stand-in.
+  function best(k, i) {
+    const row = frames[k];
+    let img = null, score = Infinity;
+    for (let j = 0; j <= LAST[k]; j++) {
+      const f = row[j], d = Math.abs(j - i);
+      if (f.bmp && d < score) { img = f.bmp; score = d; }
+      if (f.th && d + 2.5 < score) { img = f.th; score = d + 2.5; }
+    }
+    return img;
+  }
+  // For the blur only detail-free copies are needed: prefer the small ones.
+  function rough(k, i) {
+    const row = frames[k];
+    let img = null, score = Infinity;
+    for (let j = 0; j <= LAST[k]; j++) {
+      const f = row[j], d = Math.abs(j - i);
+      if (f.th && d < score) { img = f.th; score = d; }
+      if (!thumbs && f.bmp && d < score) { img = f.bmp; score = d; }
+    }
+    return img;
   }
 
   // Draw an image cover-fitted, zoomed and panned. With n > 1, offset copies are averaged into motion blur.
   function layer(c, img, zoom, pan, blurPan, blurZoom, n = 1, alpha = 1) {
     if (!img) return;
-    const cw = c.canvas.width, ch = c.canvas.height, iw = img.naturalWidth, ih = img.naturalHeight;
+    const cw = c.canvas.width, ch = c.canvas.height, iw = img.width, ih = img.height;
     for (let s = 0; s < n; s++) {
       const f = n > 1 ? s / (n - 1) - 0.5 : 0;
       const z = zoom * (1 + blurZoom * f);
@@ -501,16 +703,16 @@ section[id]{scroll-margin-top:var(--head)}
       // once the scroll comes to rest, show the single nearest frame so the picture is sharp, never a double exposure.
       const settled = cur === target;
       const i0 = settled ? Math.round(pos) : Math.floor(pos), t = settled ? 0 : pos - i0, row = frames[k];
-      layer(ctx, row[i0].ok ? row[i0].img : frameImg(k, i0), 1, 0, 0, 0);
-      if (t > 0.02 && i0 < LAST[k] && row[i0].ok && row[i0 + 1].ok) {
-        ctx.globalAlpha = t;
-        ctx.drawImage(row[i0 + 1].img, ...coverArgs(row[i0 + 1].img));
-        ctx.globalAlpha = 1;
-      }
+      const a = best(k, i0);
+      if (!a) return; // nothing decoded yet: the poster underneath stays visible
+      layer(ctx, a, 1, 0, 0, 0);
+      if (t > 0.02 && i0 < LAST[k] && row[i0].bmp === a && row[i0 + 1].bmp) layer(ctx, row[i0 + 1].bmp, 1, 0, 0, 0, 1, t);
       return;
     }
     // Between rooms: the camera pushes forward or pans quickly into the next room.
-    const out = frameImg(k, Math.round(pos)), inn = frameImg(k + 1, still ? Math.round(LAST[k + 1] / 2) : 0);
+    const io = Math.round(pos), ii = still ? Math.round(LAST[k + 1] / 2) : 0;
+    const out = best(k, io), inn = best(k + 1, ii);
+    if (!out) return;
     const [kind, dir] = MOVE[k], b = Math.sin(Math.PI * x), a = still ? x : band(x, 0.3, 0.72);
     let o, i;
     if (still) { o = [1, 0, 0, 0]; i = [1, 0, 0, 0]; }
@@ -519,24 +721,24 @@ section[id]{scroll-margin-top:var(--head)}
     // Sharp version at full resolution...
     layer(ctx, out, o[0], o[1], 0, 0);
     if (inn && a > 0) layer(ctx, inn, i[0], i[1], 0, 0, 1, a);
-    // ...with a motion-blurred version on top. Blur needs no detail, so it is drawn small with many copies and scaled up.
-    const w = still ? 0 : band(b, 0, 0.35);
-    if (w < 0.01) return;
+    // ...with a motion-blurred version on top. Blur needs no detail, so it is drawn small, from small copies, and scaled up.
+    const w = still ? 0 : band(b, 0, 0.35), outS = rough(k, io), innS = rough(k + 1, ii);
+    if (w < 0.01 || !outS) return;
     lctx.imageSmoothingQuality = 'high';
-    layer(lctx, out, o[0], o[1], o[2], o[3], 14);
-    if (inn) {
-      layer(bctx, inn, i[0], i[1], i[2], i[3], 14);
+    layer(lctx, outS, o[0], o[1], o[2], o[3], COPIES);
+    if (innS) {
+      layer(bctx, innS, i[0], i[1], i[2], i[3], COPIES);
       lctx.globalAlpha = a; lctx.drawImage(buf, 0, 0); lctx.globalAlpha = 1;
     }
+    // A light real blur melts the copies together, so no stripes show when the scroll stops mid-move
+    // (browsers without canvas filters simply skip it).
+    sctx.clearRect(0, 0, soft.width, soft.height);
+    sctx.filter = 'blur(2.5px)';
+    sctx.drawImage(low, 0, 0);
+    sctx.filter = 'none';
     ctx.globalAlpha = w;
-    ctx.drawImage(low, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(soft, 0, 0, canvas.width, canvas.height);
     ctx.globalAlpha = 1;
-  }
-  function coverArgs(img) {
-    const cw = canvas.width, ch = canvas.height, iw = img.naturalWidth, ih = img.naturalHeight;
-    let sw = iw, sh = iw * ch / cw;
-    if (sh > ih) { sh = ih; sw = ih * cw / ch; }
-    return [(iw - sw) / 2, (ih - sh) / 2, sw, sh, 0, 0, cw, ch];
   }
   function ui(sr) {
     const s = clamp(sr, 0, K - 1e-4), k = Math.floor(s), u = s - k;
@@ -550,43 +752,107 @@ section[id]{scroll-margin-top:var(--head)}
     if (k !== lastK) { lastK = k; idxEl.textContent = String(k + 1).padStart(2, '0'); }
   }
 
+  // Where the walk sits on the page, measured on resize only: reading layout on every scroll step costs time.
+  let tourTop = 0, tourH = 0, headH = 64;
+  function metrics() { tourTop = tour.offsetTop; tourH = tour.offsetHeight; headH = head.offsetHeight; }
   function measure() {
-    const r = tour.getBoundingClientRect();
-    const range = tour.offsetHeight - innerHeight;
-    target = (range > 0 ? clamp(-r.top / range, 0, 1) : 0) * U - LEAD;
-    inView = r.bottom > 0 && r.top < innerHeight;
-    head.classList.toggle('is-solid', r.bottom <= head.offsetHeight);
+    const y = scrollY, range = tourH - innerHeight;
+    target = (range > 0 ? clamp((y - tourTop) / range, 0, 1) : 0) * U - LEAD;
+    inView = y < tourTop + tourH && y + innerHeight > tourTop;
+    head.classList.toggle('is-solid', tourTop + tourH - y <= headH);
   }
-  function tick() {
+  function tick(now) {
     raf = 0;
-    const d = target - cur;
-    cur = reduce.matches || Math.abs(d) < 0.0008 ? target : cur + d * 0.14;
-    if (inView) { render(clamp(cur, 0, K - 1e-4)); ui(cur); }
-    if (cur !== target) kick();
+    const dt = lastT ? Math.min(64, now - lastT) : 16.7;
+    lastT = now;
+    // The picture follows the scroll with a little inertia, the same at 60 and 120 Hz. With Lenis the wheel
+    // is already smoothed, so it follows more closely there.
+    const d = target - cur, half = smooth ? 40 : 75; // ms to cover half the remaining distance
+    cur = reduce.matches || Math.abs(d) < 0.0008 ? target : cur + d * (1 - Math.pow(0.5, dt / half));
+    const s = clamp(cur, 0, K - 1e-4), k = Math.floor(s), spot = k * 100 + Math.round((s - k) * LAST[k]);
+    if (spot !== lastSpot) { lastSpot = spot; decode(); }
+    if (inView) { render(s); ui(cur); }
+    if (cur !== target) kick(); else lastT = 0;
   }
   function kick() { if (!raf) raf = requestAnimationFrame(tick); }
   function size() {
-    const r = canvas.getBoundingClientRect();
+    const r = { width: canvas.clientWidth, height: canvas.clientHeight }; // layout size: the opening zoom must not enlarge it
     if (!r.width || !r.height) return;
     const dpr = Math.min(window.devicePixelRatio || 1, 2, 2200 / r.width);
     const w = Math.round(r.width * dpr), h = Math.round(r.height * dpr);
     if (canvas.width !== w || canvas.height !== h) {
       canvas.width = w; canvas.height = h;
-      low.width = buf.width = Math.round(w * 0.3); low.height = buf.height = Math.round(h * 0.3);
+      low.width = buf.width = soft.width = Math.round(w * 0.3); low.height = buf.height = soft.height = Math.round(h * 0.3);
     }
     // Landscape window: the 16:9 set. Portrait: the 9:16 set, cropped per room to follow the subject.
     useSet(r.width / r.height >= 0.7 ? 'd' : 'm');
+    metrics();
     measure();
     render(clamp(cur, 0, K - 1e-4));
   }
+  // Downloads start once the page itself has loaded (text, font, first picture), or as soon as you scroll.
+  const go = () => {
+    if (started) return;
+    started = true; pump();
+    // Use the blur filter once while nothing happens: its first use costs ~100 ms, which would otherwise land mid-scroll.
+    const warm = () => { sctx.filter = 'blur(2.5px)'; sctx.drawImage(low, 0, 0); sctx.filter = 'none'; ctx.globalAlpha = 0; ctx.drawImage(soft, 0, 0, 1, 1); ctx.globalAlpha = 1; };
+    if ('requestIdleCallback' in window) requestIdleCallback(warm, { timeout: 1500 }); else setTimeout(warm, 300);
+  };
+  if (document.readyState === 'complete') go(); else addEventListener('load', go, { once: true });
+  setTimeout(go, 2500);
 
   if ('ResizeObserver' in window) new ResizeObserver(size).observe(canvas);
-  addEventListener('resize', () => { size(); kick(); });
-  addEventListener('scroll', () => { measure(); kick(); }, { passive: true });
+  addEventListener('resize', () => { metrics(); size(); kick(); });
+  addEventListener('scroll', () => { go(); measure(); kick(); }, { passive: true });
   size();
   cur = target;
   ui(cur);
   kick();
+
+  /* ---------- Smooth wheel scrolling (Lenis) on mouse and trackpad; touch keeps the phone's own scrolling ---------- */
+  let lenis = null;
+  function smoothWheel() {
+    if (lenis || !window.Lenis || reduce.matches || !matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+    lenis = new Lenis({ autoRaf: true, lerp: 0.085, smoothWheel: true });
+    smooth = true;
+  }
+  smoothWheel();
+  if (!lenis) addEventListener('DOMContentLoaded', smoothWheel, { once: true }); // the script is deferred
+  // Menu links glide to their section; without Lenis the browser does that itself (scroll-behavior: smooth).
+  document.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click', e => {
+    const id = a.getAttribute('href').slice(1), el = document.getElementById(id);
+    if (!lenis || !el) return;
+    e.preventDefault();
+    lenis.scrollTo(id === 'rondgang' ? 0 : el, { duration: 1.6, easing: p => 1 - Math.pow(1 - p, 4) });
+  }));
+
+  /* ---------- Reveal on scroll ---------- */
+  if (!reduce.matches && 'IntersectionObserver' in window) {
+    const marks = [
+      ['rv', '.sec-head > div, .sec-text, .caption, .step-copy, .price-main > *, .fact, .contact-text > *, .foot'],
+      ['rv-img', '.player, .step-img, .compare, .contact-photo']
+    ];
+    const io = new IntersectionObserver(entries => {
+      // Things that come into view together follow each other by a beat.
+      entries.filter(e => e.isIntersecting).forEach((e, n) => {
+        e.target.style.transitionDelay = (n * 0.09).toFixed(2) + 's';
+        e.target.classList.add('in');
+        io.unobserve(e.target);
+        setTimeout(() => { e.target.style.transitionDelay = ''; }, 2500);
+      });
+    }, { rootMargin: '0px 0px -7% 0px', threshold: 0.12 });
+    marks.forEach(([cls, sel]) => document.querySelectorAll(sel).forEach(el => { el.classList.add(cls); io.observe(el); }));
+  }
+
+  /* ---------- Header: steps aside while you scroll down through the page, comes back when you scroll up ---------- */
+  let refY = scrollY;
+  addEventListener('scroll', () => {
+    const y = scrollY, hidden = head.classList.contains('is-hidden');
+    if (!head.classList.contains('is-solid') || y < 10) { if (hidden) head.classList.remove('is-hidden'); refY = y; return; }
+    if (hidden) { if (y > refY) refY = y; else if (refY - y > 24) { head.classList.remove('is-hidden'); refY = y; } }
+    else { if (y < refY) refY = y; else if (y - refY > 80) { head.classList.add('is-hidden'); refY = y; } }
+  }, { passive: true });
+  head.addEventListener('focusin', () => head.classList.remove('is-hidden'));
 
   /* ---------- Compare: 3D model and final frame ---------- */
   const cmp = document.getElementById('vergelijk');
@@ -619,7 +885,7 @@ section[id]{scroll-margin-top:var(--head)}
     io.observe(cmp);
   }
 
-  /* ---------- Video: own play control, only one plays at a time ---------- */
+  /* ---------- Video: own play control, only one plays at a time; the poster loads when the film comes near ---------- */
   document.querySelectorAll('.player').forEach(p => {
     const v = p.querySelector('video'), btn = p.querySelector('.play');
     const start = () => { btn.hidden = true; v.controls = true; };
@@ -632,6 +898,11 @@ section[id]{scroll-margin-top:var(--head)}
       if (r && r.catch) r.catch(() => {});
     });
     v.addEventListener('play', start);
+    const poster = () => { if (v.dataset.poster) { v.poster = v.dataset.poster; delete v.dataset.poster; } };
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver(entries => { if (entries[0].isIntersecting) { io.disconnect(); poster(); } }, { rootMargin: '150% 0px' });
+      io.observe(v);
+    } else poster();
   });
   const videos = [...document.querySelectorAll('video')];
   videos.forEach(v => v.addEventListener('play', () => videos.forEach(o => { if (o !== v) o.pause(); })));
@@ -640,7 +911,7 @@ section[id]{scroll-margin-top:var(--head)}
   document.querySelectorAll('[data-copy]').forEach(btn => btn.addEventListener('click', () => {
     const value = btn.closest('.contact-row').querySelector('.contact-value');
     const selectIt = () => { const r = document.createRange(); r.selectNodeContents(value); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); };
-    const done = () => { btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = 'Copy'; }, 1800); };
+    const done = () => { btn.textContent = t('copied', 'Copied'); setTimeout(() => { btn.textContent = t('copy', 'Copy'); }, 1800); };
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(btn.dataset.copy).then(done, selectIt);
     else selectIt();
   }));
