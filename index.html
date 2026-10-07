@@ -96,9 +96,12 @@ section[id]{scroll-margin-top:var(--head)}
   linear-gradient(to top,rgb(var(--shade-rgb) / .55) 0,rgb(var(--shade-rgb) / 0) 30%),
   rgb(var(--shade-rgb) / .14)}
 .captions{position:absolute;inset:0;pointer-events:none}
-.cap{position:absolute;display:grid;gap:1rem;max-width:min(48rem,calc(100% - 2 * var(--gutter)));opacity:0;visibility:hidden;transform:translateY(18px);
-  transition:opacity .7s ease,transform 1s cubic-bezier(.2,.7,.2,1),visibility 0s linear .7s;text-shadow:0 1px 30px rgb(var(--shade-rgb) / .35)}
-.cap.is-on{opacity:1;visibility:visible;transform:none;pointer-events:auto;transition:opacity .7s ease .1s,transform 1s cubic-bezier(.2,.7,.2,1) .1s,visibility 0s}
+/* Hidden captions stay rendered (opacity 0, own layer), so the big titles with their soft shadow are drawn
+   once up front instead of at the moment they appear mid-scroll. */
+.cap{position:absolute;display:grid;gap:1rem;max-width:min(48rem,calc(100% - 2 * var(--gutter)));opacity:0;transform:translateY(18px);will-change:opacity,transform;
+  transition:opacity .7s ease,transform 1s cubic-bezier(.2,.7,.2,1);text-shadow:0 1px 30px rgb(var(--shade-rgb) / .35)}
+.cap:not(.is-on) .textlink{visibility:hidden}
+.cap.is-on{opacity:1;transform:none;pointer-events:auto;transition:opacity .7s ease .1s,transform 1s cubic-bezier(.2,.7,.2,1) .1s}
 .cap .label{opacity:.85}
 .cap .room{font-size:clamp(2.75rem,1.3rem + 5.8vw,7.25rem)}
 .cap .note{font-size:.75rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;line-height:1.6;max-width:30rem;opacity:.95;text-shadow:0 1px 14px rgb(var(--shade-rgb) / .55)}
@@ -642,7 +645,8 @@ html.lenis,html.lenis body{height:auto}
     decodeBlob(f.blob, small ? thumbW : 0).then(img => {
       if (g !== gen) { release(img); return; }
       decoding--; f.busy = false;
-      if (!small) f.bmp = img;
+      // Draw each new frame once, tiny, so its upload to the graphics card happens now and not in a burst at a room change.
+      if (!small) { f.bmp = img; bctx.drawImage(img, 0, 0, 2, 2); }
       else if (img.width === thumbW) f.th = img;
       else { thumbs = false; release(img); } // no resizing in this browser: the blur uses the full frames
       kick(); decode();
@@ -795,7 +799,13 @@ html.lenis,html.lenis body{height:auto}
     if (started) return;
     started = true; pump();
     // Use the blur filter once while nothing happens: its first use costs ~100 ms, which would otherwise land mid-scroll.
-    const warm = () => { sctx.filter = 'blur(2.5px)'; sctx.drawImage(low, 0, 0); sctx.filter = 'none'; ctx.globalAlpha = 0; ctx.drawImage(soft, 0, 0, 1, 1); ctx.globalAlpha = 1; };
+    // It has to be a real draw with content, and read back once so the GPU actually does the work now.
+    const warm = () => {
+      lctx.fillStyle = '#7a7268'; lctx.fillRect(0, 0, low.width, low.height);
+      sctx.clearRect(0, 0, soft.width, soft.height);
+      sctx.filter = 'blur(2.5px)'; sctx.drawImage(low, 0, 0); sctx.filter = 'none';
+      try { sctx.getImageData(0, 0, 1, 1); } catch (_) {}
+    };
     if ('requestIdleCallback' in window) requestIdleCallback(warm, { timeout: 1500 }); else setTimeout(warm, 300);
   };
   if (document.readyState === 'complete') go(); else addEventListener('load', go, { once: true });
